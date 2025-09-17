@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Rezervasyon Formu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(120deg, #e0ecff 0%, #b3d8fd 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: bgMove 10s infinite alternate;
+        }
+        @keyframes bgMove {
+            0% {background-position: left;}
+            100% {background-position: right;}
+        }
+        .rez-card {
+            background: rgba(255,255,255,0.97);
+            border-radius: 32px;
+            box-shadow: 0 8px 32px rgba(179,216,253,0.18), 0 2px 8px rgba(224,236,255,0.12);
+            padding: 48px 36px;
+            max-width: 540px;
+            width: 100%;
+            animation: fadeInCard 1.2s;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .rez-card:hover {
+            box-shadow: 0 16px 48px rgba(179,216,253,0.28), 0 4px 16px rgba(224,236,255,0.22);
+            transform: scale(1.02);
+        }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: scale(0.95);}
+            to { opacity: 1; transform: scale(1);}
+        }
+        .rez-title {
+            font-size: 2.3rem;
+            font-weight: 700;
+            color: #3498db;
+            text-align: center;
+            margin-bottom: 32px;
+            letter-spacing: 1px;
+            animation: slideDown 1.1s;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-40px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        .form-label {
+            font-weight: 600;
+            color: #3498db;
+        }
+        .form-control {
+            border-radius: 10px;
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        .form-control:focus {
+            box-shadow: 0 0 0 2px #b3d8fd55;
+            border-color: #3498db;
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #e0ecff 0%, #3498db 100%);
+            border: none;
+            font-weight: 600;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 8px rgba(179,216,253,0.18);
+            color: #fff;
+            transition: background 0.3s;
+        }
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #3498db 0%, #e0ecff 100%);
+            color: #3498db;
+        }
+        .rez-list {
+            margin-top: 40px;
+        }
+        .rez-item {
+            background: linear-gradient(90deg, #eaf6ff 0%, #d6eaff 100%);
+            border-radius: 14px;
+            padding: 20px 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 2px 8px rgba(179,216,253,0.08);
+            position: relative;
+            animation: rezFadeIn 0.7s;
+        }
+        @keyframes rezFadeIn {
+            from { opacity: 0; transform: translateY(30px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        .rez-item strong {
+            color: #3498db;
+            font-size: 1.15rem;
+        }
+        .rez-item .fa-user, .rez-item .fa-calendar-days, .rez-item .fa-clock, .rez-item .fa-building, .rez-item .fa-comment {
+            color: #3498db;
+            margin-right: 8px;
+        }
+        .text-muted {
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        /* Animasyonlu input ikonları */
+        .form-label i {
+            transition: transform 0.3s;
+        }
+        .form-control:focus + .form-label i {
+            transform: scale(1.2) rotate(-10deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="rez-card">
+        <div class="rez-title">
+            <i class="fa-solid fa-calendar-days"></i> Rezervasyon Yap
+        </div>
+        <form method="post">
+            {% if error %}
+            <div class="alert alert-danger mb-3" role="alert">
+                {{ error }}
+            </div>
+            {% endif %}
+            <div class="mb-3">
+                <label class="form-label"><i class="fa-solid fa-user"></i> Ad Soyad</label>
+                <input type="text" name="ad_soyad" class="form-control" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label"><i class="fa-solid fa-building"></i> Kültür Merkezi</label>
+                <select name="kultur_merkezi" class="form-control" required>
+                    <option value="" disabled selected>Kültür Merkezi Seçiniz</option>
+                    <option value="Sefaköy Kültür Merkezi">Sefaköy Kültür Merkezi</option>
+                    <option value="Cennet Kültür Merkezi">Cennet Kültür Merkezi</option>
+                    <option value="Atakent Kültür Merkezi">Atakent Kültür Merkezi</option>
+                </select>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label"><i class="fa-solid fa-calendar-days"></i> Tarih</label>
+                    <input type="date" name="tarih" class="form-control" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label"><i class="fa-solid fa-clock"></i> Saat</label>
+                    <input type="time" name="saat" class="form-control" required>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label"><i class="fa-solid fa-comment"></i> Açıklama</label>
+                <textarea name="aciklama" class="form-control" rows="2"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-paper-plane"></i> Rezervasyon Yap</button>
+        </form>
+        <div class="rez-list">
+            <h4 class="mb-3 text-center"><i class="fa-solid fa-list"></i> Rezervasyonlar</h4>
+            <ul class="list-unstyled">
+                {% for r in reservations %}
+                <li class="rez-item">
+                    <div><i class="fa-solid fa-user"></i> <strong>{{ r['ad_soyad'] }}</strong></div>
+                    <div><i class="fa-solid fa-building"></i> {{ r['kultur_merkezi'] }}</div>
+                    <div><i class="fa-solid fa-calendar-days"></i> {{ r['tarih'] }} <i class="fa-solid fa-clock"></i> {{ r['saat'] }}</div>
+                    <div><i class="fa-solid fa-comment"></i> Açıklama: {{ r['aciklama'] }}</div>
+                </li>
+                {% else %}
+                <li class="text-muted">Henüz rezervasyon yok.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
