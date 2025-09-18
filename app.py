@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for
 from datetime import datetime
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates")
 
 # Rezervasyonlar burada tutuluyor
 reservations = []
@@ -13,15 +13,19 @@ def rezervasyon():
         yeni_merkez = request.form['kultur_merkezi']
         yeni_tarih = request.form['tarih']
         yeni_saat = request.form['saat']
-        yeni_saat_dt = datetime.strptime(yeni_saat, "%H:%M")
-        # Aynı kültür merkezi ve tarih için saat aralığı kontrolü (en az 1 saat aralıklı olmalı)
-        for r in reservations:
-            if r['kultur_merkezi'] == yeni_merkez and r['tarih'] == yeni_tarih:
-                mevcut_saat_dt = datetime.strptime(r['saat'], "%H:%M")
-                saat_fark = abs((yeni_saat_dt - mevcut_saat_dt).total_seconds()) / 3600
-                if saat_fark < 1:
-                    error = "Bu kültür merkezi bu tarih ve saatte doludur, lütfen başka saat seçiniz (en az 1 saat aralıklı olmalı)."
-                    break
+        try:
+            yeni_saat_dt = datetime.strptime(yeni_saat, "%H:%M")
+        except ValueError:
+            error = "Saat formatı hatalı!"
+        if not error:
+            # Aynı kültür merkezi ve tarih için saat aralığı kontrolü (en az 1 saat aralıklı olmalı)
+            for r in reservations:
+                if r['kultur_merkezi'] == yeni_merkez and r['tarih'] == yeni_tarih:
+                    mevcut_saat_dt = datetime.strptime(r['saat'], "%H:%M")
+                    saat_fark = abs((yeni_saat_dt - mevcut_saat_dt).total_seconds()) / 3600
+                    if saat_fark < 1:
+                        error = "Bu kültür merkezi bu tarih ve saatte doludur, lütfen başka saat seçiniz (en az 1 saat aralıklı olmalı)."
+                        break
         if not error:
             rezervasyon = {
                 'ad_soyad': request.form['ad_soyad'],
