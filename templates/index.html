@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="tr">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>Rezervasyonlar</title>
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<style>
+		:root{
+			--bg:#f6f8fa; --card:#ffffff; --muted:#6b7280; --accent:#4f46e5;
+			--success:#10b981; --danger:#ef4444; --glass: rgba(255,255,255,0.6);
+		}
+		*{box-sizing:border-box}
+		body{
+			font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+			margin:0; background:linear-gradient(180deg,#eef2ff 0%,var(--bg) 100%); color:#0f172a;
+		}
+		.container{max-width:1200px;margin:36px auto;padding:20px}
+		header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;gap:16px}
+		.brand{display:flex;align-items:center;gap:12px}
+		.logo{
+			width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#06b6d4);
+			display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:0 6px 18px rgba(79,70,229,0.18);
+		}
+		h1{margin:0;font-size:20px}
+		.controls{display:flex;gap:12px;align-items:center}
+		.btn{
+			background:var(--accent);color:white;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;font-weight:600;
+			box-shadow:0 6px 18px rgba(79,70,229,0.12)
+		}
+		.btn.ghost{background:transparent;color:var(--accent);border:1px solid rgba(79,70,229,0.12)}
+		.search{
+			background:var(--card);padding:8px 12px;border-radius:10px;display:flex;align-items:center;gap:8px;border:1px solid rgba(15,23,42,0.04)
+		}
+		.search input{border:0;outline:none;background:transparent;width:220px}
+		.grid{display:grid;grid-template-columns:1fr 2fr;gap:20px}
+		.card{background:var(--card);border-radius:12px;padding:16px;box-shadow:0 6px 20px rgba(15,23,42,0.04)}
+		.stats{display:flex;gap:12px}
+		.stat{flex:1;padding:12px;border-radius:10px;background:linear-gradient(180deg,rgba(79,70,229,0.06),transparent);display:flex;flex-direction:column;gap:6px}
+		.stat .num{font-weight:700;font-size:18px}
+		form .row{display:flex;gap:8px;margin-bottom:8px}
+		label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block}
+		input[type="text"],input[type="date"],input[type="time"],select{
+			width:100%;padding:10px;border-radius:8px;border:1px solid rgba(15,23,42,0.06);outline:none;background:transparent
+		}
+		.table-wrap{overflow:auto}
+		table{width:100%;border-collapse:collapse;font-size:14px}
+		th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(15,23,42,0.04)}
+		th{font-size:13px;color:var(--muted);font-weight:600}
+		tr:hover td{background:linear-gradient(90deg,rgba(79,70,229,0.03),transparent)}
+		.actions button{margin-right:6px;padding:6px 8px;border-radius:8px;border:0;cursor:pointer}
+		.btn-sm{padding:6px 10px;font-size:13px}
+		.empty{padding:24px;text-align:center;color:var(--muted)}
+		.footer-note{font-size:13px;color:var(--muted);margin-top:12px}
+		@media (max-width:900px){
+			.grid{grid-template-columns:1fr; }
+			.search input{width:120px}
+		}
+	</style>
+	<!-- SheetJS (xlsx) kütüphanesi -->
+	<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+	<div class="container">
+		<header>
+			<div class="brand">
+				<div class="logo">RZ</div>
+				<div>
+					<h1>Rezervasyon Yönetimi</h1>
+					<div style="font-size:13px;color:var(--muted)">Hızlıca rezervasyon ekleyin, arayın ve yönetin</div>
+				</div>
+			</div>
+
+			<div class="controls">
+				<div class="search card" title="Ara">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="#7c7c9b" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="11" r="6" stroke="#7c7c9b" stroke-width="1.6"/></svg>
+					<input id="globalSearch" placeholder="Ad Soyad, Merkez veya Açıklama..." />
+				</div>
+				<button id="themeToggle" class="btn ghost">Tema</button>
+				<button class="btn" onclick="document.getElementById('ad_soyad').focus()">Yeni Rezervasyon</button>
+			</div>
+		</header>
+
+		<section class="grid">
+			<!-- Sol: Form ve istatistikler -->
+			<div>
+				<div class="card">
+					<div class="stats" style="margin-bottom:12px">
+						<div class="stat">
+							<div style="font-size:12px;color:var(--muted)">Toplam Rezervasyon</div>
+							<div class="num" id="totalCount">0</div>
+						</div>
+						<div class="stat">
+							<div style="font-size:12px;color:var(--muted)">Bugün</div>
+							<div class="num" id="todayCount">0</div>
+						</div>
+						<div class="stat">
+							<div style="font-size:12px;color:var(--muted)">Onaylı</div>
+							<div class="num" id="confirmedCount">0</div>
+						</div>
+					</div>
+
+					<form id="rezForm" onsubmit="return addReservation(event)">
+						<div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:8px">
+							<div style="flex:1">
+								<label for="ad_soyad">Ad Soyad</label>
+								<input id="ad_soyad" name="ad_soyad" type="text" placeholder="Örn: Ahmet Yılmaz" required />
+							</div>
+							<div style="width:220px">
+								<label for="merkez">Merkez</label>
+								<select id="merkez" name="merkez" required>
+									<option value="">Seçiniz...</option>
+									<option value="sefaköy kültür merkezi">sefaköy kültür merkezi</option>
+									<option value="cennet kültür merkezi">cennet kültür merkezi</option>
+									<option value="atakent kültür merkezi">atakent kültür merkezi</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="row">
+							<div style="flex:1">
+								<label for="tarih">Tarih</label>
+								<input id="tarih" name="tarih" type="date" required />
+							</div>
+							<div style="width:140px">
+								<label for="saat">Saat</label>
+								<input id="saat" name="saat" type="time" required />
+							</div>
+						</div>
+
+						<div class="row" style="margin-bottom:12px">
+							<div style="flex:1">
+								<label for="aciklama">Açıklama (opsiyonel)</label>
+								<input id="aciklama" name="aciklama" type="text" placeholder="Örn: Özel ekipman isteği" />
+							</div>
+						</div>
+
+						<div style="display:flex;gap:8px">
+							<button class="btn" type="submit">Kaydet</button>
+							<button type="button" class="btn ghost" onclick="resetForm()">Temizle</button>
+							<button type="button" class="btn btn-sm" onclick="exportXLSX()">XLSX Dışa Aktar</button>
+						</div>
+					</form>
+					<div class="footer-note">Veriler tarayıcı belleğinde tutulur. Sunucuya bağlanılmadı.</div>
+				</div>
+			</div>
+
+			<!-- Sağ: Tablo -->
+			<div>
+				<div class="card">
+					<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+						<div style="font-weight:700">Rezervasyon Listesi</div>
+						<div style="font-size:13px;color:var(--muted)">Liste güncel</div>
+					</div>
+
+					<div class="table-wrap">
+						<table id="rezTable">
+							<thead>
+								<tr>
+									<th>Ad Soyad</th>
+									<th>Merkez</th>
+									<th>Tarih</th>
+									<th>Saat</th>
+									<th>Açıklama</th>
+									<th>Durum</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								<!-- ...existing code... -->
+							</tbody>
+						</table>
+						<div id="emptyState" class="empty">Henüz rezervasyon yok. Formu kullanarak ekleyin.</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+
+	<script>
+		// Basit client-side yönetim
+		const reservations = [];
+		const tableBody = document.querySelector('#rezTable tbody');
+		const emptyState = document.getElementById('emptyState');
+		const totalCount = document.getElementById('totalCount');
+		const todayCount = document.getElementById('todayCount');
+		const confirmedCount = document.getElementById('confirmedCount');
+		const searchInput = document.getElementById('globalSearch');
+
+		// küçük düzeltmeler: arama placeholder ve focus butonu
+		document.querySelector('.search input').placeholder = "Ad Soyad, Merkez veya Açıklama...";
+		document.querySelector('.controls button[onclick]').setAttribute('onclick', "document.getElementById('ad_soyad').focus()");
+
+		function formatDate(d){
+			const dt = new Date(d);
+			return dt.toLocaleDateString('tr-TR');
+		}
+
+		function updateStats(){
+			totalCount.textContent = reservations.length;
+			const today = new Date().toISOString().slice(0,10);
+			todayCount.textContent = reservations.filter(r => r.tarih === today).length;
+			confirmedCount.textContent = reservations.filter(r => r.status === 'Onaylı').length;
+		}
+
+		function renderRows(filter = ''){
+			tableBody.innerHTML = '';
+			const rows = reservations.filter(r => {
+				const haystack = ((r.ad_soyad||'') + ' ' + (r.merkez||'') + ' ' + (r.aciklama||'')).toLowerCase();
+				return haystack.includes(filter.toLowerCase());
+			});
+			if(rows.length === 0){
+				emptyState.style.display = 'block';
+			} else {
+				emptyState.style.display = 'none';
+				rows.forEach((r, idx) => {
+					const tr = document.createElement('tr');
+					tr.innerHTML = `
+						<td>${escapeHtml(r.ad_soyad)}</td>
+						<td>${escapeHtml(r.merkez)}</td>
+						<td>${formatDate(r.tarih)}</td>
+						<td>${r.saat}</td>
+						<td>${escapeHtml(r.aciklama || '')}</td>
+						<td>${r.status}</td>
+						<td class="actions">
+							<button class="btn-sm" onclick="toggleStatus(${idx})">${r.status === 'Onaylı' ? 'İptal Et' : 'Onayla'}</button>
+							<button class="btn-sm" onclick="removeReservation(${idx})" style="background:${'#fed7d7'}">Sil</button>
+						</td>
+					`;
+					tableBody.appendChild(tr);
+				});
+			}
+			updateStats();
+		}
+
+		function addReservation(e){
+			e.preventDefault();
+			const ad_soyad = document.getElementById('ad_soyad').value.trim();
+			const merkez = document.getElementById('merkez').value.trim();
+			const tarih = document.getElementById('tarih').value;
+			const saat = document.getElementById('saat').value;
+			const aciklama = document.getElementById('aciklama').value.trim();
+			if(!ad_soyad || !merkez || !tarih || !saat) return;
+			const rez = {ad_soyad, merkez, tarih, saat, aciklama, status:'Beklemede'};
+			reservations.unshift(rez);
+			renderRows(searchInput.value);
+			e.target.reset();
+			document.getElementById('ad_soyad').focus();
+		}
+
+		function resetForm(){
+			document.getElementById('rezForm').reset();
+		}
+
+		function removeReservation(i){
+			if(!confirm('Bu rezervasyonu silmek istediğinize emin misiniz?')) return;
+			reservations.splice(i,1);
+			renderRows(searchInput.value);
+		}
+
+		function toggleStatus(i){
+			const r = reservations[i];
+			r.status = r.status === 'Onaylı' ? 'İptal' : 'Onaylı';
+			renderRows(searchInput.value);
+		}
+
+		function escapeHtml(text){
+			text = text || '';
+			return text.replace(/[&<>"'`=\/]/g, function (s) {
+				return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;','`':'&#x60;','=':'&#x3D;'}[s];
+			});
+		}
+
+		searchInput.addEventListener('input', (e) => renderRows(e.target.value));
+
+		function exportXLSX(){
+			if(reservations.length === 0){ alert('Dışa aktarılacak rezervasyon yok.'); return; }
+			const headers = ['Ad Soyad','Merkez','Tarih','Saat','Açıklama','Durum'];
+			const rows = reservations.map(r => [r.ad_soyad, r.merkez, r.tarih, r.saat, r.aciklama || '', r.status]);
+			const ws_data = [headers, ...rows];
+			const wb = XLSX.utils.book_new();
+			const ws = XLSX.utils.aoa_to_sheet(ws_data);
+			XLSX.utils.book_append_sheet(wb, ws, 'Rezervasyonlar');
+			XLSX.writeFile(wb, 'rezervasyonlar.xlsx');
+		}
+
+		// Tema toggler (basit)
+		const themeToggle = document.getElementById('themeToggle');
+		let dark = false;
+		themeToggle.addEventListener('click', () => {
+			dark = !dark;
+			if(dark){
+				document.documentElement.style.setProperty('--bg','#0b1220');
+				document.documentElement.style.setProperty('--card','#071126');
+				document.documentElement.style.setProperty('--muted','#aab3c3');
+				document.documentElement.style.setProperty('--accent','#7c3aed');
+				document.documentElement.style.setProperty('--glass','rgba(255,255,255,0.03)');
+				document.body.style.color = '#e6eef8';
+				themeToggle.textContent = 'Açık';
+			} else {
+				document.documentElement.style.removeProperty('--bg');
+				document.documentElement.style.removeProperty('--card');
+				document.documentElement.style.removeProperty('--muted');
+				document.documentElement.style.removeProperty('--accent');
+				document.documentElement.style.removeProperty('--glass');
+				document.body.style.color = '';
+				themeToggle.textContent = 'Tema';
+			}
+		});
+
+		// Örnek demo verisi (isteğe bağlı, yorum satırı kaldırılarak açılabilir)
+		/* reservations.push(
+			{name:'Ayşe Demir',people:'2',date:new Date().toISOString().slice(0,10),time:'19:30',phone:'+90 5xx xxx xx xx',note:'Pencereli masa',status:'Onaylı'},
+			{name:'Mehmet Kaya',people:'4',date:new Date().toISOString().slice(0,10),time:'20:00',phone:'',note:'Doğum günü',status:'Beklemede'}
+		);
+		renderRows(); */
+
+		// İlk render
+		renderRows();
+	</script>
+</body>
+</html>

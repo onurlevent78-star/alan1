@@ -1,0 +1,147 @@
+:root{
+  --bg:#0f1724;
+  --panel:#0b1220;
+  --card:#0f1724;
+  --muted:#9aa4b2;
+  --accent:#6ee7b7;
+  --accent-2:#60a5fa;
+  --glass: rgba(255,255,255,0.03);
+  --radius:14px;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  color-scheme: dark;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:
+    radial-gradient(600px 300px at 10% 10%, rgba(96,165,250,0.06), transparent 8%),
+    radial-gradient(500px 260px at 90% 80%, rgba(110,231,183,0.04), transparent 8%),
+    linear-gradient(180deg,#020617 0%, #071025 100%);
+  color:#e6eef6;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  min-height:100vh;
+}
+
+/* Topbar */
+.topbar{
+  padding:18px 0;
+  border-bottom:1px solid rgba(255,255,255,0.03);
+}
+.topbar-inner{
+  width:95%;
+  max-width:1100px;
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.brand{ display:flex; gap:10px; align-items:center; color:var(--accent); font-weight:600; }
+.brand .logo{ color:var(--accent-2); opacity:0.95; }
+.meta{ color:var(--muted); font-size:13px; }
+
+/* Layout */
+.layout{
+  width:95%;
+  max-width:1100px;
+  margin:28px auto;
+  display:grid;
+  grid-template-columns: 340px 1fr;
+  gap:20px;
+  align-items:start;
+}
+
+/* Panel (form) */
+.panel{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:var(--radius);
+  padding:20px;
+  border:1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+}
+.panel h2{ margin:0 0 10px; font-size:18px; color:#fff; }
+.reserve-form{ display:flex; flex-direction:column; gap:10px; }
+.reserve-form label{ display:flex; flex-direction:column; gap:8px; font-size:13px; color:var(--muted); }
+.reserve-form input, .reserve-form select, .reserve-form textarea{
+  background:var(--glass);
+  border:1px solid rgba(255,255,255,0.04);
+  padding:10px 12px;
+  border-radius:10px;
+  color:#e9f2ff;
+  outline:none;
+  font-size:14px;
+}
+.row{ display:flex; gap:10px; }
+.btn{
+  margin-top:8px;
+  padding:10px 12px;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  color:#02202a;
+  border:none;
+  border-radius:10px;
+  font-weight:600;
+  cursor:pointer;
+  transition:transform .12s ease, box-shadow .12s ease;
+}
+.btn:hover{ transform:translateY(-3px); box-shadow:0 8px 30px rgba(96,165,250,0.12); }
+.hint{ margin-top:12px; color:var(--muted); font-size:13px; }
+
+/* Content area */
+.content{ }
+.content-header{ display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.content-header h3{ margin:0; font-size:16px; }
+.count{ color:var(--muted); font-weight:500; font-size:13px; margin-left:6px; }
+
+/* Cards grid */
+.cards{
+  display:grid;
+  grid-template-columns: repeat(auto-fill,minmax(240px,1fr));
+  gap:14px;
+}
+.card{
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border-radius:12px;
+  padding:12px;
+  border:1px solid rgba(255,255,255,0.03);
+  transition:transform .14s ease, box-shadow .14s ease;
+}
+.card:hover{ transform:translateY(-8px); box-shadow:0 20px 40px rgba(2,6,23,0.6); }
+.card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+.person{ display:flex; gap:10px; align-items:center; }
+.avatar{
+  width:44px;height:44px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent-2),var(--accent));
+  display:flex;align-items:center;justify-content:center;font-weight:700;color:#02202a;
+  box-shadow: 0 6px 18px rgba(96,165,250,0.12);
+}
+.name{ font-weight:600; font-size:14px; color:#fff; }
+.center{ font-size:12px; color:var(--muted); margin-top:2px; }
+.when{ font-size:12px; color:var(--muted); }
+
+/* Card body */
+.card-body{ margin-top:10px; color:var(--muted); font-size:14px; line-height:1.4; }
+.desc{ margin:0; color:#dcefff; }
+
+/* Empty state */
+.empty-state{
+  margin-top:40px;
+  text-align:center;
+  color:var(--muted);
+  background: linear-gradient(180deg, rgba(255,255,255,0.01), transparent);
+  padding:40px 20px;
+  border-radius:12px;
+  border:1px dashed rgba(255,255,255,0.02);
+}
+.empty-state svg{ color:var(--muted); opacity:0.9; margin-bottom:12px; }
+
+/* Footer */
+.footer{ text-align:center; color:var(--muted); padding:28px 0 60px; }
+
+/* Responsive */
+@media (max-width:920px){
+  .layout{ grid-template-columns: 1fr; padding:0 12px; }
+  .panel{ order:2; }
+  .content{ order:1; margin-bottom:18px; }
+}
