@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rezervasyonlar - Rezervasyon Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .table {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .table th {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+        .table td {
+            vertical-align: middle;
+            border-color: #e9ecef;
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .btn-sm {
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: 0.875rem;
+            margin: 2px;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .status-onay { background-color: #d4edda; color: #155724; }
+        .status-bekle { background-color: #fff3cd; color: #856404; }
+        .status-iptal { background-color: #f8d7da; color: #721c24; }
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .alert {
+            border-radius: 12px;
+            border: none;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .filter-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+        .filter-btn {
+            border-radius: 8px;
+            padding: 8px 16px;
+            margin: 2px;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        .filter-btn.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-1px);
+        }
+        .form-select {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('index') }}">
+                <i class="fas fa-calendar-check me-2"></i>Rezervasyon Sistemi
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('index') }}">
+                    <i class="fas fa-plus me-1"></i>Yeni Rezervasyon
+                </a>
+                {% if session.user_permissions and ('view_availability' in session.user_permissions or 'edit_reservations' in session.user_permissions) %}
+                    <a class="nav-link" href="{{ url_for('availability_view') }}">
+                        <i class="fas fa-clock me-1"></i>Saat Durumu
+                    </a>
+                {% endif %}
+                {% if session.user_permissions and 'manage_users' in session.user_permissions %}
+                    <a class="nav-link" href="{{ url_for('admin_users') }}">
+                        <i class="fas fa-users me-1"></i>Kullanıcı Yönetimi
+                    </a>
+                {% endif %}
+                <span class="nav-link text-muted">
+                    <i class="fas fa-user me-1"></i>{{ session.user_id }}
+                    {% if session.user_permissions and 'manage_users' in session.user_permissions %}
+                        <span class="badge bg-danger ms-1">Admin</span>
+                    {% elif session.user_permissions and 'edit_reservations' in session.user_permissions %}
+                        <span class="badge bg-warning ms-1">Editör</span>
+                    {% elif session.user_permissions %}
+                        <span class="badge bg-primary ms-1">Yetkili</span>
+                    {% else %}
+                        <span class="badge bg-secondary ms-1">Kullanıcı</span>
+                    {% endif %}
+                </span>
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt me-1"></i>Çıkış
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else ('warning' if category == 'warning' else 'danger') }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else ('exclamation-triangle' if category == 'warning' else 'exclamation-circle') }} me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- Filtreleme Paneli -->
+        <div class="card filter-card mb-4">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-3">
+                    <i class="fas fa-filter me-2 text-primary"></i>Filtrele
+                </h5>
+                
+                <form method="GET" action="{{ url_for('reservations_list') }}" id="filterForm">
+                    <div class="row">
+                        <!-- Merkez Filtresi -->
+                        <div class="col-md-2 mb-3">
+                            <label for="center" class="form-label fw-semibold">
+                                <i class="fas fa-building me-1"></i>Merkez
+                            </label>
+                            <select class="form-select" id="center" name="center" onchange="document.getElementById('filterForm').submit()">
+                                <option value="all" {{ 'selected' if current_filters.center == 'all' else '' }}>Tüm Merkezler</option>
+                                {% for center in centers %}
+                                    <option value="{{ center }}" {{ 'selected' if current_filters.center == center else '' }}>{{ center }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Etkinlik Yeri Filtresi -->
+                        <div class="col-md-2 mb-3">
+                            <label for="venue" class="form-label fw-semibold">
+                                <i class="fas fa-door-open me-1"></i>Etkinlik Yeri
+                            </label>
+                            <select class="form-select" id="venue" name="venue" onchange="document.getElementById('filterForm').submit()">
+                                <option value="all" {{ 'selected' if current_filters.venue == 'all' else '' }}>Tüm Yerler</option>
+                                {% for venue in venues %}
+                                    <option value="{{ venue }}" {{ 'selected' if current_filters.venue == venue else '' }}>{{ venue }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Durum Filtresi -->
+                        <div class="col-md-2 mb-3">
+                            <label for="status" class="form-label fw-semibold">
+                                <i class="fas fa-info-circle me-1"></i>Durum
+                            </label>
+                            <select class="form-select" id="status" name="status" onchange="document.getElementById('filterForm').submit()">
+                                <option value="all" {{ 'selected' if current_filters.status == 'all' else '' }}>Tüm Durumlar</option>
+                                {% for status in statuses %}
+                                    <option value="{{ status.value }}" {{ 'selected' if current_filters.status == status.value else '' }}>{{ status.label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Ay Filtresi -->
+                        <div class="col-md-3 mb-3">
+                            <label for="month" class="form-label fw-semibold">
+                                <i class="fas fa-calendar me-1"></i>Ay
+                            </label>
+                            <select class="form-select" id="month" name="month" onchange="document.getElementById('filterForm').submit()">
+                                <option value="all" {{ 'selected' if current_filters.month == 'all' else '' }}>Tüm Aylar</option>
+                                {% for month in available_months %}
+                                    {% set month_names = {
+                                        '01': 'Ocak', '02': 'Şubat', '03': 'Mart', '04': 'Nisan', 
+                                        '05': 'Mayıs', '06': 'Haziran', '07': 'Temmuz', '08': 'Ağustos',
+                                        '09': 'Eylül', '10': 'Ekim', '11': 'Kasım', '12': 'Aralık'
+                                    } %}
+                                    {% set year, month_num = month.split('-') %}
+                                    <option value="{{ month }}" {{ 'selected' if current_filters.month == month else '' }}>
+                                        {{ month_names[month_num] }} {{ year }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Yıl Filtresi -->
+                        <div class="col-md-3 mb-3">
+                            <label for="year" class="form-label fw-semibold">
+                                <i class="fas fa-calendar-alt me-1"></i>Yıl
+                            </label>
+                            <select class="form-select" id="year" name="year" onchange="document.getElementById('filterForm').submit()">
+                                <option value="all" {{ 'selected' if current_filters.year == 'all' else '' }}>Tüm Yıllar</option>
+                                {% for year in available_years %}
+                                    <option value="{{ year }}" {{ 'selected' if current_filters.year == year|string else '' }}>{{ year }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Filtre Temizleme Butonu -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="{{ url_for('reservations_list') }}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="fas fa-times me-1"></i>Filtreleri Temizle
+                                    </a>
+                                    <span class="text-muted ms-3">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Gösterilen: {{ reservations|length }} rezervasyon
+                                    </span>
+                                </div>
+                                {% if reservations %}
+                                <div>
+                                    {% if session.user_permissions and ('view_reservations' in session.user_permissions or 'edit_reservations' in session.user_permissions) %}
+                                        <a href="{{ url_for('export_excel') }}?center={{ current_filters.center }}&status={{ current_filters.status }}&month={{ current_filters.month }}&year={{ current_filters.year }}&venue={{ current_filters.venue }}" 
+                                           class="btn btn-success btn-sm">
+                                            <i class="fas fa-file-excel me-1"></i>Excel İndir
+                                        </a>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                        <div class="d-flex justify-content-between align-items-center p-3">
+                            <div>
+                                <h2 class="mb-1 fw-bold text-dark">
+                                    <i class="fas fa-list me-2 text-primary"></i>Rezervasyonlar
+                                </h2>
+                                <p class="text-muted mb-0">
+                                    {% if current_filters.center != 'all' or current_filters.status != 'all' or current_filters.month != 'all' or current_filters.year != 'all' %}
+                                        Filtrelenmiş: {{ reservations|length }} rezervasyon
+                                    {% else %}
+                                        Toplam {{ reservations|length }} rezervasyon
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if session.user_permissions and 'edit_reservations' in session.user_permissions %}
+                                <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>Yeni Rezervasyon
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% if reservations %}
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-table me-1"></i>
+                                        Toplam {{ reservations|length }} kayıt gösteriliyor
+                                    </small>
+                                </div>
+                                <div>
+                                    {% if session.user_permissions and ('view_reservations' in session.user_permissions or 'edit_reservations' in session.user_permissions) %}
+                                        <a href="{{ url_for('export_excel') }}?center={{ current_filters.center }}&status={{ current_filters.status }}&month={{ current_filters.month }}&year={{ current_filters.year }}&venue={{ current_filters.venue }}" 
+                                           class="btn btn-outline-success btn-sm">
+                                            <i class="fas fa-download me-1"></i>Excel Olarak İndir
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">Ad Soyad</th>
+                                            <th scope="col">Merkez</th>
+                                            <th scope="col">Etkinlik Yeri</th>
+                                            <th scope="col">Tarih</th>
+                                            <th scope="col">Saat</th>
+                                            <th scope="col">Durum</th>
+                                            <th scope="col">Açıklama</th>
+                                            <th scope="col">İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for reservation in reservations %}
+                                        <tr>
+                                            <th scope="row">{{ reservation.id }}</th>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-user me-2 text-primary"></i>
+                                                    {{ reservation.name_surname }}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-building me-2 text-success"></i>
+                                                    <small>{{ reservation.center }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-door-open me-2 text-warning"></i>
+                                                    <small class="fw-semibold">{{ reservation.get('venue', 'Tiyatro Salonu') }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-calendar me-2 text-info"></i>
+                                                    {% set date_parts = reservation.date.split('-') %}
+                                                    {% if date_parts|length == 3 %}
+                                                        {% set month_names = {
+                                                            '01': 'Ocak', '02': 'Şubat', '03': 'Mart', '04': 'Nisan',
+                                                            '05': 'Mayıs', '06': 'Haziran', '07': 'Temmuz', '08': 'Ağustos',
+                                                            '09': 'Eylül', '10': 'Ekim', '11': 'Kasım', '12': 'Aralık'
+                                                        } %}
+                                                        {{ date_parts[2] }} {{ month_names[date_parts[1]] }} {{ date_parts[0] }}
+                                                    {% else %}
+                                                        {{ reservation.date }}
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-clock me-2 text-primary"></i>
+                                                    <small>{{ reservation.time }}</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="status-badge status-{{ reservation.status }}">
+                                                    {% if reservation.status == 'onay' %}
+                                                        <i class="fas fa-check me-1"></i>Onaylı
+                                                    {% elif reservation.status == 'bekle' %}
+                                                        <i class="fas fa-clock me-1"></i>Beklemede
+                                                    {% elif reservation.status == 'iptal' %}
+                                                        <i class="fas fa-times me-1"></i>İptal
+                                                    {% endif %}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if reservation.description %}
+                                                    <span class="text-muted">{{ reservation.description[:30] }}{% if reservation.description|length > 30 %}...{% endif %}</span>
+                                                {% else %}
+                                                    <span class="text-muted fst-italic">Açıklama yok</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if session.user_permissions and 'edit_reservations' in session.user_permissions %}
+                                                <div class="btn-group-vertical" role="group">
+                                                    {% if reservation.status != 'onay' %}
+                                                        <a href="{{ url_for('approve_reservation', reservation_id=reservation.id) }}" 
+                                                           class="btn btn-success btn-sm" title="Onayla">
+                                                            <i class="fas fa-check"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    
+                                                    {% if reservation.status != 'bekle' %}
+                                                        <a href="{{ url_for('pending_reservation', reservation_id=reservation.id) }}" 
+                                                           class="btn btn-warning btn-sm" title="Beklet">
+                                                            <i class="fas fa-clock"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    
+                                                    {% if reservation.status != 'iptal' %}
+                                                        <a href="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}" 
+                                                           class="btn btn-secondary btn-sm" title="İptal Et"
+                                                           onclick="return confirm('Bu rezervasyonu iptal etmek istediğinizden emin misiniz?')">
+                                                            <i class="fas fa-times"></i>
+                                                        </a>
+                                                    {% endif %}
+                                                    
+                                                    <a href="{{ url_for('edit_reservation', reservation_id=reservation.id) }}" 
+                                                       class="btn btn-info btn-sm" title="Düzenle">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    
+                                                    <a href="{{ url_for('delete_reservation', reservation_id=reservation.id) }}" 
+                                                       class="btn btn-danger btn-sm" title="Sil"
+                                                       onclick="return confirm('Bu rezervasyonu kalıcı olarak silmek istediğinizden emin misiniz?')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                                {% else %}
+                                                <div class="text-center">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-eye me-1"></i>Sadece Görüntüleme
+                                                    </small>
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="empty-state">
+                                <i class="fas fa-calendar-times"></i>
+                                {% if current_filters.center != 'all' or current_filters.status != 'all' or current_filters.month != 'all' or current_filters.year != 'all' %}
+                                    <h4>Seçilen filtrelere uygun rezervasyon bulunamadı</h4>
+                                    <p class="mb-4">Filtreleri değiştirerek tekrar deneyin veya yeni rezervasyon oluşturun.</p>
+                                    <a href="{{ url_for('reservations_list') }}" class="btn btn-outline-secondary me-2">
+                                        <i class="fas fa-times me-2"></i>Filtreleri Temizle
+                                    </a>
+                                {% else %}
+                                    <h4>Henüz rezervasyon bulunmuyor</h4>
+                                    {% if session.user_permissions and 'edit_reservations' in session.user_permissions %}
+                                        <p class="mb-4">İlk rezervasyonunuzu oluşturmak için aşağıdaki butona tıklayın.</p>
+                                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                            <i class="fas fa-plus me-2"></i>İlk Rezervasyonu Oluştur
+                                        </a>
+                                    {% else %}
+                                        <p class="mb-4">Henüz rezervasyon bulunmamaktadır.</p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Alert mesajlarını otomatik olarak kapat
+        setTimeout(function() {
+            var alerts = document.getElementsByClassName('alert');
+            for (var i = 0; i < alerts.length; i++) {
+                if (alerts[i] && alerts[i].parentNode) {
+                    var bsAlert = new bootstrap.Alert(alerts[i]);
+                    setTimeout(function(alertElement) {
+                        if (alertElement && alertElement.parentNode) {
+                            try {
+                                var alert = new bootstrap.Alert(alertElement);
+                                alert.close();
+                            } catch (e) {
+                                // Hata durumunda sessizce devam et
+                            }
+                        }
+                    }, 4000, alerts[i]);
+                }
+            }
+        }, 100);
+
+        // URL parametrelerini koruyarak sayfa yenileme
+        function preserveFilters() {
+            const url = new URL(window.location);
+            return url.search;
+        }
+    </script>
+</body>
+</html>
