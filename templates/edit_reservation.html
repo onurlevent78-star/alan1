@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rezervasyon Düzenle - Rezervasyon Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+        }
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .btn-secondary {
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-weight: 600;
+        }
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+        .header-icon {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .input-group-text {
+            border-radius: 12px 0 0 12px;
+            border: 2px solid #e9ecef;
+            border-right: none;
+            background: #f8f9fa;
+        }
+        .form-control.with-icon {
+            border-radius: 0 12px 12px 0;
+            border-left: none;
+        }
+        .form-control.with-icon:focus {
+            border-left: none;
+        }
+        .input-group .form-control:focus + .input-group-text,
+        .input-group-text + .form-control:focus {
+            border-color: #667eea;
+        }
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        .status-onay { background-color: #d4edda; color: #155724; }
+        .status-bekle { background-color: #fff3cd; color: #856404; }
+        .status-iptal { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-primary" href="{{ url_for('index') }}">
+                <i class="fas fa-calendar-check me-2"></i>Rezervasyon Sistemi
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{{ url_for('index') }}">
+                    <i class="fas fa-home me-1"></i>Ana Sayfa
+                </a>
+                {% if session.user_permissions and ('view_reservations' in session.user_permissions or 'edit_reservations' in session.user_permissions) %}
+                    <a class="nav-link" href="{{ url_for('reservations_list') }}">
+                        <i class="fas fa-list me-1"></i>Rezervasyonları Görüntüle
+                    </a>
+                {% endif %}
+                {% if session.user_permissions and ('view_availability' in session.user_permissions or 'edit_reservations' in session.user_permissions) %}
+                    <a class="nav-link" href="{{ url_for('availability_view') }}">
+                        <i class="fas fa-clock me-1"></i>Saat Durumu
+                    </a>
+                {% endif %}
+                {% if session.user_permissions and 'manage_users' in session.user_permissions %}
+                    <a class="nav-link" href="{{ url_for('admin_users') }}">
+                        <i class="fas fa-users me-1"></i>Kullanıcı Yönetimi
+                    </a>
+                {% endif %}
+                <span class="nav-link text-muted">
+                    <i class="fas fa-user me-1"></i>{{ session.user_id }}
+                    {% if session.user_permissions and 'manage_users' in session.user_permissions %}
+                        <span class="badge bg-danger ms-1">Admin</span>
+                    {% elif session.user_permissions and 'edit_reservations' in session.user_permissions %}
+                        <span class="badge bg-warning ms-1">Editör</span>
+                    {% elif session.user_permissions %}
+                        <span class="badge bg-primary ms-1">Yetkili</span>
+                    {% else %}
+                        <span class="badge bg-secondary ms-1">Kullanıcı</span>
+                    {% endif %}
+                </span>
+                <a class="nav-link" href="{{ url_for('logout') }}">
+                    <i class="fas fa-sign-out-alt me-1"></i>Çıkış
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else ('warning' if category == 'warning' else 'danger') }} alert-dismissible fade show" role="alert">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else ('exclamation-triangle' if category == 'warning' else 'exclamation-circle') }} me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-edit header-icon"></i>
+                            <h2 class="card-title fw-bold text-dark mb-3">Rezervasyon Düzenle</h2>
+                            <div class="mb-3">
+                                <span class="badge bg-light text-dark me-2">ID: #{{ reservation.id }}</span>
+                                <span class="status-badge status-{{ reservation.status }}">
+                                    {% if reservation.status == 'onay' %}
+                                        <i class="fas fa-check me-1"></i>Onaylı
+                                    {% elif reservation.status == 'bekle' %}
+                                        <i class="fas fa-clock me-1"></i>Beklemede
+                                    {% elif reservation.status == 'iptal' %}
+                                        <i class="fas fa-times me-1"></i>İptal
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <p class="text-muted">Rezervasyon bilgilerini güncelleyebilirsiniz.</p>
+                        </div>
+
+                        <form method="POST" action="{{ url_for('update_reservation', reservation_id=reservation.id) }}" class="needs-validation" novalidate>
+                            <div class="mb-4">
+                                <label for="name_surname" class="form-label">
+                                    <i class="fas fa-user me-2"></i>Ad Soyad
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control with-icon" id="name_surname" name="name_surname" 
+                                           placeholder="Adınız ve soyadınızı giriniz" 
+                                           value="{{ form_data.name_surname if form_data else reservation.name_surname }}" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="center" class="form-label">
+                                    <i class="fas fa-building me-2"></i>Merkez
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-building"></i>
+                                    </span>
+                                    <select class="form-control with-icon" id="center" name="center" required>
+                                        <option value="">Merkez seçiniz</option>
+                                        {% set selected_center = form_data.center if form_data else reservation.center %}
+                                        <option value="Sefaköy Kültür Merkezi" {{ 'selected' if selected_center == 'Sefaköy Kültür Merkezi' else '' }}>Sefaköy Kültür Merkezi</option>
+                                        <option value="Cennet Kültür Merkezi" {{ 'selected' if selected_center == 'Cennet Kültür Merkezi' else '' }}>Cennet Kültür Merkezi</option>
+                                        <option value="Atakent Kültür Merkezi" {{ 'selected' if selected_center == 'Atakent Kültür Merkezi' else '' }}>Atakent Kültür Merkezi</option>
+                                        <option value="Kemalpaşa Semt Konağı" {{ 'selected' if selected_center == 'Kemalpaşa Semt Konağı' else '' }}>Kemalpaşa Semt Konağı</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="venue" class="form-label">
+                                    <i class="fas fa-door-open me-2"></i>Etkinlik Yeri
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-door-open"></i>
+                                    </span>
+                                    <select class="form-control with-icon" id="venue" name="venue" required>
+                                        <option value="">Etkinlik yeri seçiniz</option>
+                                        {% set selected_venue = form_data.venue if form_data else reservation.get('venue', 'Tiyatro Salonu') %}
+                                        <option value="Tiyatro Salonu" {{ 'selected' if selected_venue == 'Tiyatro Salonu' else '' }}>Tiyatro Salonu</option>
+                                        <option value="Seminer Salonu" {{ 'selected' if selected_venue == 'Seminer Salonu' else '' }}>Seminer Salonu</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-4">
+                                    <label for="date" class="form-label">
+                                        <i class="fas fa-calendar me-2"></i>Tarih
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-calendar"></i>
+                                        </span>
+                                        <input type="date" class="form-control with-icon" id="date" name="date" 
+                                               value="{{ form_data.date if form_data else reservation.date }}" required>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-4">
+                                    <label for="time" class="form-label">
+                                        <i class="fas fa-clock me-2"></i>Saat
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-clock"></i>
+                                        </span>
+                                        <select class="form-control with-icon" id="time" name="time" required>
+                                            <option value="">Saat seçiniz</option>
+                                            {% set time_slots = ["09:00-10:00", "10:00-11:00", "11:00-12:00", "12:00-13:00", "13:00-14:00", "14:00-15:00", "15:00-16:00", "16:00-17:00", "17:00-18:00", "18:00-19:00", "19:00-20:00", "20:00-21:00", "21:00-22:00"] %}
+                                            {% set selected_time = form_data.time if form_data else reservation.time %}
+                                            {% for slot in time_slots %}
+                                                <option value="{{ slot }}" {{ 'selected' if selected_time == slot else '' }}>{{ slot }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="description" class="form-label">
+                                    <i class="fas fa-comment me-2"></i>Açıklama
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-comment"></i>
+                                    </span>
+                                    <textarea class="form-control with-icon" id="description" name="description" 
+                                              rows="4" placeholder="Rezervasyon hakkında ek bilgiler...">{{ form_data.description if form_data else reservation.description }}</textarea>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar-plus me-1"></i>
+                                            Oluşturulma: {{ reservation.created_at }}
+                                        </small>
+                                    </div>
+                                    {% if reservation.get('updated_at') %}
+                                    <div class="col-md-6 text-end">
+                                        <small class="text-muted">
+                                            <i class="fas fa-edit me-1"></i>
+                                            Son Güncelleme: {{ reservation.updated_at }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                {% if session.user_permissions and ('view_reservations' in session.user_permissions or 'edit_reservations' in session.user_permissions) %}
+                                    <a href="{{ url_for('reservations_list') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Geri Dön
+                                    </a>
+                                {% else %}
+                                    <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Ana Sayfa
+                                    </a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Güncelle
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Minimum tarih olarak bugünü ayarla
+        document.getElementById('date').min = new Date().toISOString().split('T')[0];
+        
+        // Form validasyonu
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Alert mesajlarını otomatik kapat
+        setTimeout(function() {
+            var alerts = document.getElementsByClassName('alert');
+            for (var i = 0; i < alerts.length; i++) {
+                if (alerts[i] && alerts[i].parentNode) {
+                    try {
+                        var bsAlert = new bootstrap.Alert(alerts[i]);
+                        bsAlert.close();
+                    } catch (e) {}
+                }
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

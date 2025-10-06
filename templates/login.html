@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Giriş - Rezervasyon Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            border: none;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.95);
+            max-width: 400px;
+            width: 100%;
+        }
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e9ecef;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 12px;
+            padding: 12px 30px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .header-icon {
+            font-size: 4rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        .input-group-text {
+            border-radius: 12px 0 0 12px;
+            border: 2px solid #e9ecef;
+            border-right: none;
+            background: #f8f9fa;
+        }
+        .form-control.with-icon {
+            border-radius: 0 12px 12px 0;
+            border-left: none;
+        }
+        .demo-info {
+            background: rgba(52, 144, 220, 0.1);
+            border: 1px solid rgba(52, 144, 220, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="card login-card">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <i class="fas fa-sign-in-alt header-icon"></i>
+                            <h2 class="card-title fw-bold text-dark mb-3">Giriş Yap</h2>
+                            <p class="text-muted">Rezervasyon sistemi kullanmak için giriş yapın</p>
+                        </div>
+
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                            {% if messages %}
+                                {% for category, message in messages %}
+                                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' }} me-2"></i>{{ message }}
+                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        {% endwith %}
+
+                        <form method="POST" action="{{ url_for('login') }}">
+                            <div class="mb-4">
+                                <label for="username" class="form-label fw-semibold">
+                                    <i class="fas fa-user me-2"></i>Kullanıcı Adı
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-user"></i>
+                                    </span>
+                                    <input type="text" class="form-control with-icon" id="username" name="username" 
+                                           placeholder="Kullanıcı adınızı giriniz" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="password" class="form-label fw-semibold">
+                                    <i class="fas fa-lock me-2"></i>Şifre
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control with-icon" id="password" name="password" 
+                                           placeholder="Şifrenizi giriniz" required>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Giriş Yap
+                            </button>
+                        </form>
+
+                        <!-- Demo Bilgileri -->
+                        <div class="demo-info">
+                            <h6 class="fw-bold text-primary mb-2">
+                                <i class="fas fa-info-circle me-2"></i>Demo Hesapları
+                            </h6>
+                            <div class="row">
+                                <div class="col-12 mb-2">
+                                    <strong>🔥 Admin (Tüm Yetkiler):</strong><br>
+                                    <small>Kullanıcı: <code>admin</code> Şifre: <code>admin123</code></small><br>
+                                    <small class="text-danger">✓ Rezervasyon ✓ Liste ✓ Düzenleme ✓ Saat ✓ Kullanıcı Yönetimi ✓ Excel</small>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>⚡ Editör (Tam Yetki):</strong><br>
+                                    <small>Kullanıcı: <code>editor1</code> Şifre: <code>editor123</code></small><br>
+                                    <small class="text-warning">✓ Rezervasyon ✓ Liste ✓ Düzenleme ✓ Saat ✓ Excel</small>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>👁️ Görüntüleyici (Liste + Excel):</strong><br>
+                                    <small>Kullanıcı: <code>viewer1</code> Şifre: <code>viewer123</code></small><br>
+                                    <small class="text-info">✓ Rezervasyon ✓ Liste ✓ Excel (Düzenleme YOK)</small>
+                                </div>
+                                <div class="col-12 mb-2">
+                                    <strong>📅 Planlamacı (Sadece Saat):</strong><br>
+                                    <small>Kullanıcı: <code>scheduler1</code> Şifre: <code>scheduler123</code></small><br>
+                                    <small class="text-success">✓ Rezervasyon ✓ Saat Kontrolü</small>
+                                </div>
+                                <div class="col-12">
+                                    <strong>👤 Kullanıcı (Sadece Rezervasyon):</strong><br>
+                                    <small>Kullanıcı: <code>user1</code> Şifre: <code>user123</code></small><br>
+                                    <small class="text-secondary">✓ Sadece Rezervasyon Oluşturma</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

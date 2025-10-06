@@ -1,0 +1,16 @@
+[Unit]
+Description=Rezervasyon Sistemi Flask App
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/rezervasyon_sistemi
+Environment="PATH=/var/www/rezervasyon_sistemi/venv/bin"
+ExecStart=/var/www/rezervasyon_sistemi/venv/bin/gunicorn --config gunicorn.conf.py app:app
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
